@@ -1,0 +1,13 @@
+[project]
+name = "ytb-backup-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.42.65",
+    "duckdb>=1.5.0",
+    "google-api-python-client>=2.192.0",
+    "google-auth-oauthlib>=1.3.0",
+    "polars>=1.38.1",
+]
