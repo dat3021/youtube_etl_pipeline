@@ -3,7 +3,7 @@ __pycache__/
 .env
 *.json
 *.db
-*.pickel
+*.pickle
 
 .vscode/
 *.rst
@@ -11,3 +11,4 @@ __pycache__/
 *.txt
 aws/
 .aws/
+store/

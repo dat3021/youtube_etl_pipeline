@@ -9,14 +9,14 @@ class YtbService:
     def __init__(self, client_secrets_file):
         self.client_secrets_file = client_secrets_file
         self.scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-        self.token_file = os.path.join(os.path.dirname(__file__), 'token.pickel')
+        self.token_file = os.path.join(os.path.dirname(__file__), 'token.pickle')
         self.service = self._authenticate()
 
     def _authenticate(self):
         creds = None
 
-        if os.path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
+        if os.path.exists(self.token_file):
+            with open(self.token_file, 'rb') as token:
                 creds = pickle.load(token)
 
         if not creds or not creds.valid:
@@ -34,7 +34,7 @@ class YtbService:
         return build("youtube", "v3", credentials=creds)
     
     def _get_new_cred(self):
-        flow = InstalledAppFlow.from_client_secrets_file(
+        flow = InstalledAppFlow.from_client_secrgitets_file(
             self.client_secrets_file, self.scopes)
         
         return flow.run_local_server(
@@ -51,7 +51,7 @@ class YouTubeExtractor:
         
         all_playlist = []
         next_pagetoken = None
-        print("Extracting playlists...")
+        
         while True: 
             request = self.service.playlists().list(part="snippet,contentDetails", 
                                                     mine=True, 
@@ -85,11 +85,9 @@ class YouTubeExtractor:
         return all_videos
 
     def extract_subscriptions(self):
-        print("Extracting subscriptions...")
         request = self.service.subscriptions().list(part="snippet", mine=True)
         return request.execute()
 
     def extract_video_details(self, video_id):
-        print(f"Extracting details for video: {video_id}")
         request = self.service.videos().list(part="snippet,statistics", id=video_id)
         return request.execute()
