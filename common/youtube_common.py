@@ -1,47 +1,49 @@
 import os
-import pickle
+import json
+import logging
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
+logger = logging.getLogger(__name__)
+
 class YtbService:
-    
-    def __init__(self, client_secrets_file):
+    def __init__(self, client_secrets_file, token_env_var='YOUTUBE_TOKEN'):
         self.client_secrets_file = client_secrets_file
+        self.token_env_var = token_env_var
         self.scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-        self.token_file = os.path.join(os.path.dirname(__file__), 'token.pickle')
         self.service = self._authenticate()
 
     def _authenticate(self):
         creds = None
-
-        if os.path.exists(self.token_file):
-            with open(self.token_file, 'rb') as token:
-                creds = pickle.load(token)
+        token_data = os.environ.get(self.token_env_var)
+        
+        if token_data:
+            try:
+                creds_info = json.loads(token_data)
+                creds = Credentials.from_authorized_user_info(creds_info, self.scopes)
+            except Exception as e:
+                logger.error(f"Error loading credentials from environment variable: {e}")
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
-                except Exception as e:
-                    print(f"error: {e}")         
+                    logger.info(f"Credentials refreshed. Please update {self.token_env_var} with: {creds.to_json()}")
+                except Exception:
+                    creds = self._get_new_cred()
+                    logger.info(f"New credentials obtained. Please set {self.token_env_var} to: {creds.to_json()}")
             else:
                 creds = self._get_new_cred()
-
-            with open(self.token_file, 'wb') as token:
-                pickle.dump(creds, token)
+                logger.info(f"New credentials obtained. Please set {self.token_env_var} to: {creds.to_json()}")
 
         return build("youtube", "v3", credentials=creds)
     
     def _get_new_cred(self):
-        flow = InstalledAppFlow.from_client_secrgitets_file(
+        flow = InstalledAppFlow.from_client_secrets_file(
             self.client_secrets_file, self.scopes)
-        
-        return flow.run_local_server(
-            port=0, 
-            open_browser=False, 
-            access_type='offline', 
-            prompt='consent')
+        return flow.run_local_server(port=0, open_browser=False, access_type='offline', prompt='consent')
 
 class YouTubeExtractor:
     def __init__(self, service):
