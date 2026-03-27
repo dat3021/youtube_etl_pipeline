@@ -14,20 +14,29 @@ class s3_service:
 
         try:
             self.s3_client.upload_file(file_name, target_bucket, object_name)
-            logger.info(f"uploaded {file_name} to {target_bucket}/{object_name}")
-            return True
         except Exception as e:
             logger.error(f"Error uploading: {e}")
-            return False
+
         
     def download_file(self, file_name, object_name, bucket_name=None):
             
         target_bucket = bucket_name if bucket_name else self.default_bucket
 
         try:
-            self.s3_client.download_file(target_bucket, object_name, file_name)
+            respone = self.s3_client.download_file(target_bucket, object_name, file_name)
             logger.info(f"downloaded {file_name} in {target_bucket}/{bucket_name} ")
             return True
         except Exception as e:
-            logger.error(f"Error downloading {file_name} in {target_bucket}/{object_name}")
+            logger.error(f"Error downloading {file_name} in {target_bucket}/{object_name} \n error: {e}")
+            return False
+        
+
+    def list_object(self, bucket_name, prefix):
+
+        try:
+            response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+            logger.info(f"list object in bucket: {bucket_name} - with prefix {prefix} ")
+            return response
+        except Exception as e:
+            logger.error(f"Failed to list object: {e}")
             return False
