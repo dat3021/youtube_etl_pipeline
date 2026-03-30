@@ -1,10 +1,13 @@
 import os
 import json
 import logging
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -26,17 +29,30 @@ class YtbService:
             except Exception as e:
                 logger.error(f"Error loading credentials from environment variable: {e}")
 
+        needs_save = False
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
-                    logger.info(f"Credentials refreshed. Please update {self.token_env_var} with: {creds.to_json()}")
+                    logger.info("Credentials refreshed automatically.")
+                    needs_save = True
                 except Exception:
                     creds = self._get_new_cred()
-                    logger.info(f"New credentials obtained. Please set {self.token_env_var} to: {creds.to_json()}")
+                    logger.info("New credentials obtained.")
+                    needs_save = True
             else:
                 creds = self._get_new_cred()
-                logger.info(f"New credentials obtained. Please set {self.token_env_var} to: {creds.to_json()}")
+                logger.info("New credentials obtained.")
+                needs_save = True
+
+        if needs_save:
+            try:
+                from dotenv import set_key, find_dotenv
+                env_file = find_dotenv() or '.env'
+                set_key(env_file, self.token_env_var, creds.to_json())
+                logger.info(f"Saved new credentials to {env_file}")
+            except Exception as e:
+                logger.error(f"Could not save credentials to .env file: {e}")
 
         return build("youtube", "v3", credentials=creds)
     
@@ -51,7 +67,7 @@ class YouTubeExtractor:
 
     def extract_playlists(self):
         
-        all_playlist = []
+        playlist = []
         next_pagetoken = None
         
         while True: 
@@ -61,12 +77,12 @@ class YouTubeExtractor:
                                                     pageToken=next_pagetoken)
             respone = request.execute()
             items = respone.get('items', [])
-            all_playlist.extend(items)
+            playlist.extend(items)
 
             next_pagetoken = respone.get('nextPageToken')
             if not next_pagetoken:
                 break
-        return all_playlist
+        return playlist
 
     def extract_playlist_items(self, playlist_id):
         all_videos = []
