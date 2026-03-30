@@ -1,0 +1,43 @@
+common:
+  object_path: &object_path "stg/"
+  duckdb_setup: &duckdb_setup "
+      INSTALL httpfs; LOAD httpfs;
+      INSTALL aws; LOAD aws;
+      CALL load_aws_credentials();
+      SET s3_region='{region}'"
+
+youtube_playlist:
+  source_path: "raw/youtube/playlist/*/*.json"
+  target_namespace: "youtube_analytics"
+  target_table: "playlists_iceberg"
+  object_path: *object_path
+  duckdb_setup: *duckdb_setup
+  sql_transform: "
+      SELECT 
+          kind, 
+          id AS playlist_id, 
+          snippet.channelId AS channel_id, 
+          snippet.title AS playlist_title, 
+          CAST(contentDetails.itemCount AS BIGINT) AS item_count, 
+          extract_date
+      FROM read_json_auto('{source_s3_path}')"
+
+youtube_playlist_items:
+  source_path: "raw/youtube/playlist_items/*/*.json"
+  target_namespace: "youtube_analytics"
+  target_table: "playlist_items_iceberg"
+  object_path: *object_path
+  duckdb_setup: *duckdb_setup
+  sql_transform: "
+      SELECT 
+          kind, 
+          id AS playlist_item_id, 
+          snippet.playlistId AS playlist_id,
+          snippet.resourceId.videoId AS video_id,
+          snippet.title AS video_title,
+          snippet.channelId AS channel_id,
+          snippet.channelTitle AS channel_title,
+          CAST(snippet.position AS BIGINT) AS position,
+          snippet.publishedAt AS published_at,
+          extract_date
+      FROM read_json_auto('{source_s3_path}')"
