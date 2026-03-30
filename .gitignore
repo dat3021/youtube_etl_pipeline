@@ -4,10 +4,13 @@ __pycache__/
 *.json
 *.db
 *.pickle
-
+.airflow/
+config/
+logs/
 .vscode/
 *.rst
-
+*.duckdb
+*.db
 *.txt
 aws/
 .aws/
