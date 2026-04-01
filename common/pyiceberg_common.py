@@ -6,7 +6,7 @@ from pyiceberg.exceptions import NoSuchTableError
 logger = logging.getLogger(__name__)
 
 def get_glue_catalog(s3_path: str, region: str = None):
-    region = region or os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION') or 'ap-southeast-2'
+    region = region or os.environ.get('MY_AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION') or 'ap-southeast-2'
     os.environ['AWS_DEFAULT_REGION'] = region
 
     return load_catalog(

@@ -26,7 +26,8 @@ def extract_playlist_data(local_file='temp.json'):
 
         return local_file
     except Exception as e:
-        logger.error(f"Failed to fetch data: {e}")      
+        logger.error(f"Failed to fetch data: {e}")     
+        raise e 
 
 def upload_to_s3(data, bucket_name, object_name, local_file='temp.json'):
     try:

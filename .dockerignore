@@ -8,4 +8,7 @@ store/
 .airflow/
 *.duckdb
 *.db
- 
+ terraform/
+*.json
+logs/
+plugins/

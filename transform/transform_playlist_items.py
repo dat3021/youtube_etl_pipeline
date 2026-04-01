@@ -25,7 +25,7 @@ def transform_playlist_items_to_iceberg(bucket_name, **kwargs):
     table_name = p_config['target_table']
 
     # Initialize DuckDB and AWS
-    region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+    region = os.environ.get('MY_AWS_REGION', 'ap-southeast-2')
     setup_query = p_config['duckdb_setup'].format(region=region) 
     con = duckdb.connect()
     con.execute(setup_query)
