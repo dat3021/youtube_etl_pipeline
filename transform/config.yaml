@@ -7,7 +7,7 @@ common:
       SET s3_region='{region}'"
 
 youtube_playlist:
-  source_path: "raw/youtube/playlist/*/*.json"
+  source_path: "raw/youtube/playlist/{date_str}/*.json"
   target_namespace: "youtube_analytics"
   target_table: "playlists_iceberg"
   object_path: *object_path
@@ -23,7 +23,7 @@ youtube_playlist:
       FROM read_json_auto('{source_s3_path}')"
 
 youtube_playlist_items:
-  source_path: "raw/youtube/playlist_items/*/*.json"
+  source_path: "raw/youtube/playlist_items/{date_str}/*.json"
   target_namespace: "youtube_analytics"
   target_table: "playlist_items_iceberg"
   object_path: *object_path

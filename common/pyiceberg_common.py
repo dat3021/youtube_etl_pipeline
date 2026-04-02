@@ -14,7 +14,11 @@ def get_glue_catalog(s3_path: str, region: str = None):
         **{
             "type": "glue",
             "s3.region": region,
-            "s3_path": s3_path
+            "warehouse": s3_path,
+            "s3.endpoint": f"https://s3.{region}.amazonaws.com",
+            "py-io-impl": "pyiceberg.io.pyarrow.PyArrowFileIO",
+            "s3.connect-timeout": "10",
+            "s3.request-timeout": "10",
         }
     )
 

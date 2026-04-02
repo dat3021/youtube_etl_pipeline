@@ -3,6 +3,7 @@ import os
 import logging
 import yaml
 from common.pyiceberg_common import write_to_iceberg
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -12,25 +13,29 @@ def load_config():
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def transform_playlist_to_iceberg(bucket_name, **kwargs):
+def transform_playlist_to_iceberg(bucket_name,  **kwargs):
 
     config = load_config()
     
     # Load parameters from YAML
     p_config = config['youtube_playlist']
     
-    source_s3_path = f"s3://{bucket_name}/{p_config['source_path']}"
+    run_date = datetime.now().strftime('%Y%m%d')
+
+    source_path = p_config['source_path'].format(date_str=run_date)
+    source_s3_path = f"s3://{bucket_name}/{source_path}"
     s3_path = f"s3://{bucket_name}/{p_config['object_path']}"
     namespace = p_config['target_namespace']
     table_name = p_config['target_table']
 
     # Initialize DuckDB and AWS
-    region = os.environ.get('AWS_REGION', 'ap-southeast-2')
+    region = os.environ.get('MY_AWS_REGION', 'ap-southeast-2')
     setup_query = p_config['duckdb_setup'].format(region=region) 
     con = duckdb.connect()
     con.execute(setup_query)
 
     query = p_config['sql_transform'].format(source_s3_path=source_s3_path)
+    logger.info(f"Scanning source path: {source_s3_path}")
     arrow_table = con.execute(query).arrow().read_all()
 
     # Write to Iceberg using common library

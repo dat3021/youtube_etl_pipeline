@@ -3,6 +3,7 @@ import os
 import logging
 import yaml
 from common.pyiceberg_common import write_to_iceberg
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -18,8 +19,10 @@ def transform_playlist_items_to_iceberg(bucket_name, **kwargs):
     
     # Load parameters from YAML
     p_config = config['youtube_playlist_items']
-    
-    source_s3_path = f"s3://{bucket_name}/{p_config['source_path']}"
+    run_date = datetime.now().strftime('%Y%m%d')
+
+    source_path = p_config['source_path'].format(date_str=run_date)
+    source_s3_path = f"s3://{bucket_name}/{source_path}"
     s3_path = f"s3://{bucket_name}/{p_config['object_path']}"
     namespace = p_config['target_namespace']
     table_name = p_config['target_table']
@@ -31,6 +34,7 @@ def transform_playlist_items_to_iceberg(bucket_name, **kwargs):
     con.execute(setup_query)
 
     query = p_config['sql_transform'].format(source_s3_path=source_s3_path)
+    logger.info(f"Scanning source path: {source_s3_path}")
     arrow_table = con.execute(query).arrow().read_all()
 
     # Write to Iceberg using common library

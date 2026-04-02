@@ -48,13 +48,17 @@ with DAG(
     transform_playlists = PythonOperator(
         task_id='transform_playlists',
         python_callable=transform_playlist_to_iceberg,
-        op_kwargs={'bucket_name': S3_BUCKET}
+        op_kwargs={
+            'bucket_name': S3_BUCKET
+        }
     )
 
     transform_playlist_items = PythonOperator(
         task_id='transform_playlist_items',
         python_callable=transform_playlist_items_to_iceberg,
-        op_kwargs={'bucket_name': S3_BUCKET}
+        op_kwargs={
+            'bucket_name': S3_BUCKET
+        }
     )
 
     extract_playlists >> extract_playlist_items
