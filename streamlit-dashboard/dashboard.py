@@ -3,13 +3,12 @@ import duckdb
 import pandas as pd
 import os
 
-# Cấu hình trang Dashboard
 st.set_page_config(page_title="YouTube Iceberg Dashboard", layout="wide")
 
 @st.cache_data
 def get_data():
     con = duckdb.connect()
-    # Bước 1: Setup môi trường
+
     con.execute("""
         INSTALL httpfs; LOAD httpfs;
         INSTALL aws; LOAD aws;
@@ -30,12 +29,10 @@ def get_data():
     df_items = con.execute(query_items).df()
     return df_playlists, df_items
 
-# Thực thi lấy data
 try:
     with st.spinner("Fetching data from S3 Iceberg..."):
         df_playlists, df_items = get_data()
 
-    # Sidebar Navigation
     st.sidebar.title("Analytics Menu")
     page = st.sidebar.radio("Navigation", ["Main Page", "Raw Data"])
 
@@ -79,7 +76,7 @@ try:
             )
 
     elif page == "Raw Data":
-        st.title("📁 Iceberg Raw Data")
+        st.title(" Iceberg Raw Data")
         
         st.subheader("Playlists (youtube_analytics.playlists_iceberg)")
         st.dataframe(df_playlists, use_container_width=True)
@@ -97,4 +94,4 @@ try:
             st.write(df_items.columns.tolist())
 
 except Exception as e:
-    st.error(f"❌ Lỗi: {e}")
+    st.error(f"error: {e}")
