@@ -45,6 +45,8 @@ The goal of this project is to perform data analytics and backup on Youtube data
 ### Visual Architecture
 
 
+<img width="1979" height="738" alt="local" src="https://github.com/user-attachments/assets/ca50969c-5e1c-424d-9476-28ca5c88e2ac" />
+
 
 ### Cloud Runtime Workflow (Serverless Automation)
 1. Trigger: AWS EventBridge initiates based on a predefined Cron schedule
@@ -56,7 +58,10 @@ The goal of this project is to perform data analytics and backup on Youtube data
 4. Cataloging: Metadata y managed via the AWS Glue Data Catalog
 
 ### Visual Architecture
+<img width="800" height="600" alt="cloud" src="https://github.com/user-attachments/assets/afcd3f91-bee6-486d-94f3-8ced16843f8f" />
+
 ### Visualize On Dashboard
+
 ## Project Structure
 
 ```text
