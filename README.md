@@ -61,6 +61,8 @@ The goal of this project is to perform data analytics and backup on Youtube data
 <img width="800" height="600" alt="cloud" src="https://github.com/user-attachments/assets/afcd3f91-bee6-486d-94f3-8ced16843f8f" />
 
 ### Visualize On Dashboard
+<img width="1799" height="1088" alt="Screenshot 2026-04-05 170345" src="https://github.com/user-attachments/assets/477fb06a-87f6-49ad-babd-947283df51b5" />
+
 
 ## Project Structure
 
