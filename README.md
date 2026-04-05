@@ -1,81 +1,131 @@
-# YouTube Data Pipeline & Backup (Iceberg Edition)
+# YouTube - ELT Pipeline
 
-## 1. Project Overview
-**Project Title:** YouTube Iceberg Data Lake Pipeline  
-**Context:** This project is an automated ETL pipeline designed to extract metadata from YouTube playlists and items using the YouTube Data API v3. The data is ingested into an AWS S3 landing zone and transformed into the **Apache Iceberg** table format for high-performance analytics and historical versioning.  
-**Motivation:** The goal is to create a robust, "storage-first" data backup solution that leverages modern data lakehouse architecture. By using Iceberg and Glue, we ensure schema evolution, ACID transactions on S3, and the ability to query data using multiple engines (DuckDB, Apache Superset, Streamlit) without data duplication.
+An automated ETL pipeline designed to extract data from YouTube Data API (playlists and PlaylistItems), store in an AWS S3 landing zone, and transform them into **Apache Iceberg** tables using Duckdb and Pyiceberg.
 
-## 2. System Architecture
-### Visual Workflow
-`YouTube API` → `Airflow (ECS)` → `S3 (Raw JSON)` → `DuckDB/PyIceberg` → `S3 (Iceberg Parquet)` → `Glue Catalog` → `Streamlit / Superset`
+---
 
-### Tech Stack
-1.  **Orchestration:** Apache Airflow (running in Docker/ECS)
-2.  **Extraction:** Python + Google Client Library (YouTube API v3)
-3.  **Data Lake Format:** Apache Iceberg (Glue Data Catalog)
-4.  **Transformation Engine:** **DuckDB** (for fast JSON-to-Arrow processing)
-5.  **Catalog Management:** AWS Glue Data Catalog + **PyIceberg**
-6.  **Infrastructure as Code:** Terraform (ECR, ECS, S3/DynamoDB Backend)
-7.  **Storage:** Amazon S3
-8.  **Visualization:** Streamlit & Apache Superset
+##  Project Overview
 
-## 3. Repository Structure
+The goal of this project is to perform data analytics and backup on Youtube data using various tools and technologies, automates API ingestion into Amazon S3 using Apache Iceberg and AWS Glue for ACID transactions and schema evolution. Orchestrated via Apache Airflow (Docker/ECS) and provisioned with Terraform, the pipeline leverages DuckDB and PyIceberg, powering Streamlit dashboard for data exploration.
+
+---
+
+## Tools & Tech Stack
+
+### Core Technologies
+- **Orchestration:** [Apache Airflow](https://airflow.apache.org/) (managed via Docker/ECS).
+- **Extraction:** Python + [Google API Client](https://github.com/googleapis/google-api-python-client).
+- **Data Lake Format:** [Apache Iceberg](https://iceberg.apache.org/).
+- **Transformation Engine:** [DuckDB](https://duckdb.org/) & [PyIceberg](https://py.iceberg.apache.org/).
+- **Catalog:** AWS Glue Data Catalog.
+- **Storage:** Amazon S3.
+- **Infrastructure:** [Terraform](https://www.terraform.io/).
+- **Visualization:** [Streamlit](https://streamlit.io/).
+
+### Prerequisites
+- **Python 3.12+** (Managed via [`uv`](https://github.com/astral-sh/uv)).
+- **Docker & Docker Compose** (for local orchestration).
+- **Terraform** (for cloud deployment).
+- **AWS CLI** configured with appropriate permissions.
+- **YouTube Data API v3 Key**.
+
+---
+
+## Project Architecture
+
+### Local Workflow
+1.  **Extract:** Python scripts fetch paginated metadata  from the YouTube API.
+2.  **Load (Raw):** Data is saved as raw JSON files in an S3 landing zone
+3.  **Transform:**
+    - **DuckDB** reads raw JSON and converts it into Arrow tables (schema-on-read).
+    - **PyIceberg** writes the Arrow data into Iceberg Parquet files.
+4.  **Register:** Metadata is registered in the **AWS Glue Data Catalog**.
+5.  **Visualize:** **Streamlit** queries the Iceberg tables directly from S3.
+
+### Visual Architecture
+
+
+
+### Cloud Runtime Workflow (Serverless Automation)
+1. Trigger: AWS EventBridge initiates based on a predefined Cron schedule
+
+2. Launch: AWS ECS Fargate pulls the latest containerized image from  ECR to execute the ELT tasks in a serverless environment.
+
+3. Processing: The containerized task handles YouTube API authentication and pagination, load and transform raw data.
+
+4. Cataloging: Metadata y managed via the AWS Glue Data Catalog
+
+### Visual Architecture
+### Visualize On Dashboard
+## Project Structure
+
 ```text
 .
-├── common/             # Shared utilities for S3, PyIceberg, and YouTube API
-├── dags/               # Airflow DAG definition (youtube_pipeline)
+├── common/             # Shared utilities (service wrappers)
+├── dags/               # Airflow DAG definitions (youtube_pipeline.py)
 ├── extract/            # Scripts for fetching data from YouTube API
-├── transform/          # DuckDB transformation logic and PyIceberg writers
-├── terraform/          # IaC modules for ECR, ECS, and TF state management
-├── store/              # Placeholder for dbt (future)
-├── streamlit-dashboard/# Visualization layer
-├── docker-compose.yaml # Local Airflow development setup
-└── dockerfile          # Airflow image with uv package manager
+├── transform/          # DuckDB transformation logic and Iceberg writers
+├── terraform/          # IaC modules (ECR, ECS, TF State, S3/DynamoDB)
+│   └── modules/        # Reusable modules for ECR, ECS, and State management
+├── streamlit-dashboard/# Visualization app (dashboard.py)
+├── docker-compose.yaml # Local Airflow setup (Postgres, Redis, Celery)
+├── dockerfile          # Custom Airflow image with 'uv' and project deps
+└── pyproject.toml      # Project dependencies and metadata
 ```
 
-## 4. Data Flow & Transformation
-*   **Ingestion:** Python scripts in `extract/` fetch paginated results from the YouTube API. Data is saved as raw JSON in `s3://{bucket}/raw/youtube/{date_str}/`.
-*   **Storage & Warehouse:** S3 serves as both the landing zone and the permanent warehouse. The Iceberg format organizes data into metadata and data (Parquet) layers, registered in the Glue Data Catalog.
-*   **Transformation:** The `transform/` layer uses **DuckDB** to perform "schema-on-read" for JSON files. It converts the raw JSON into Arrow tables, which are then appended to Iceberg tables via **PyIceberg**. This approach avoids traditional heavy Spark clusters and allows for lightweight, fast transformations.
-*   **Orchestration:** Tasks are managed by the `youtube_pipeline` DAG, handling dependencies between extraction and transformation with daily scheduling.
+---
 
-## 5. Final Output & Visualization
-*   **Reporting Tools:** 
-    *   **Streamlit Dashboard:** A native Python app (`streamlit-dashboard/dashboard.py`) that uses DuckDB to scan Iceberg metadata directly from S3 for real-time insights.
-    *   **Apache Superset:** Can connect to the Iceberg tables directly or via querying engines (like Athena or DuckDB) to join Iceberg data with other datasets for comprehensive BI dashboards.
-*   **Key Insights:** Monitors total playlist counts, video density per playlist, and channel-level content growth.
+##  Platforms & Deployment
 
-## 6. Prerequisites & Environment
-*   **Hardware/OS Notes:** Optimized for Linux/macOS. Docker is required for Airflow orchestration.
-*   **Python Environment:** Managed via `uv`. Requires Python 3.12+.
-*   **AWS Configuration:** Requires an IAM User/Role with permissions for S3, Glue, ECR, and ECS.
-*   **YouTube API:** Requires a valid API Key from the Google Cloud Console.
+The project is designed to run in two environments:
 
-## 7. Implementation Guide
-1.  **Repository Setup:**
-    ```bash
-    git clone <repo-url>
-    cd ytb_backup_project
-    uv sync  # Install dependencies locally
-    ```
-2.  **API/Credential Configuration:**
-    *   Set `YOUTUBE_API_KEY` in your environment.
-    *   Configure AWS credentials (`~/.aws/credentials`).
-3.  **Cloud Infrastructure Setup:**
-    ```bash
-    cd terraform
-    terraform init
-    terraform apply
-    ```
-4.  **Containerization:**
-    *   Build and push the Docker image to the ECR repository (`youtube-pipeline`) created by Terraform.
-5.  **Running the Pipeline:**
-    *   **Local Development:** `docker-compose up -d`
-    *   **Cloud Deployment:** Trigger the ECS tasks via the Airflow instance running in your cluster.
+### 1. Local Development (Docker)
+Ideal for testing DAGs and extraction logic locally.
+- **Setup:**
+  ```bash
+  uv sync                        
 
-## 8. Project Maintenance
-*   **Termination:** Run `terraform destroy` within the `terraform/` directory to tear down all AWS resources and stop incurring costs.
-*   **Future Improvements:** 
-    *   Implement **dbt-glue** for more complex transformation modeling.
-    *   Add automated Iceberg table maintenance (compaction and snapshot expiration).
-    *   Expand extraction to include video comments and engagement metrics.
+  cat <<EOF > .env
+    YOUTUBE_TOKEN=your_token
+    YOUTUBE_CLIENT_SECRET=your_secret
+    MY_AWS_REGION=us-east-1
+    MY_AWS_ACCESS_KEY_ID=your_access_key
+    MY_AWS_SECRET_ACCESS_KEY=your_secret_key
+    EOF
+
+  docker-compose up -d            
+  ```
+- **Access:** Airflow UI at `http://localhost:8080` (Default: `admin/admin`).
+
+### 2. Cloud Production (AWS)
+Managed via Terraform for a scalable, production-grade environment.
+- **Infrastructure:**
+    - **ECS (Fargate):** Runs Airflow tasks as containers.
+    - **ECR:** Hosts the custom Airflow Docker image.
+    - **S3:** Primary data lake storage and Terraform state backend.
+    - **Glue:** Manages the Iceberg table catalog.
+- **Deployment:**
+  ```bash
+  cd terraform
+  terraform init
+  terraform apply
+  ```
+ **Note:** 
+- Build the Docker image and push it to the ECR repository.
+- Manage credentials using AWS Secrets Manager.
+
+---
+
+##  Other Requirements
+
+### AWS Permissions
+Your IAM User/Role requires permissions for:
+- `s3:*` (Data Lake and TF State).
+- `glue:*` (Catalog Management).
+- `ecs:*` & `ecr:*` (Container Orchestration).
+- `dynamodb:*` (TF State Locking).
+
+
+### Project Maintenance
+- **Clean Up:** Run `terraform destroy` to tear down all cloud resources.
+- **Updates:** Use `uv lock` to update dependencies and rebuild the Docker image.
