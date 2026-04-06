@@ -1,10 +1,9 @@
 # YouTube - ELT Pipeline
 
-An automated ETL pipeline designed to extract data from YouTube Data API (playlists and PlaylistItems), store in an AWS S3 landing zone, and transform them into **Apache Iceberg** tables using Duckdb and Pyiceberg.
-
----
 
 ##  Project Overview
+
+An automated ETL pipeline designed to extract data from YouTube Data API (playlists and PlaylistItems), store in an AWS S3 landing zone, and transform them into **Apache Iceberg** tables using Duckdb and Pyiceberg.
 
 The goal of this project is to perform data analytics and backup on Youtube data using various tools and technologies, automates API ingestion into Amazon S3 using Apache Iceberg and AWS Glue for ACID transactions and schema evolution. Orchestrated via Apache Airflow (Docker/ECS) and provisioned with Terraform, the pipeline leverages DuckDB and PyIceberg, powering Streamlit dashboard for data exploration.
 
